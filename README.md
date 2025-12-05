@@ -16,11 +16,27 @@ Discounts are applied in the following sequential order:
 2. Voucher codes
 3. Bank offers
 
-## Installation
+## Getting Started
 
-```bash
-pip install -r requirements.txt
-```
+To get started with development, create a virtual environment and install the project in editable mode.
+
+### Prerequisites
+
+- Python 3.8+
+
+### Installation
+
+1.  **Clone the repository:**
+    git clone https://github.com/mizunus/ecom-discount-engine.git
+    cd ecom-discount-engine
+
+2.  **Create and activate a virtual environment:**
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+
+3.  **Install the project in editable mode with development dependencies:**
+    pip install -e .[dev]
+        This installs the project along with the testing libraries defined in `pyproject.toml`.
 
 ## Usage
 
@@ -47,7 +63,7 @@ print(result.message)
 ```
 
 ## Running Tests
-
+After installing the project with the `[dev]` dependencies, you can run the tests:
 ```bash
 pytest
 ```
@@ -62,5 +78,5 @@ ecom-discount-engine/
 │   └── fake_data.py    # Test data
 ├── tests/
 │   └── test_services.py  # Unit tests
-└── requirements.txt    # Dependencies
+└── pyproject.toml      # Project configuration and dependencies
 ```
