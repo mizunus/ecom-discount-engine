@@ -3,7 +3,8 @@ from decimal import Decimal
 
 from src.models import CartItem, CustomerProfile, Product, BrandTier
 from src.services import DiscountService
-from src.rules import BrandDiscountRule, CategoryDiscountRule, VoucherDiscountRule
+from src.rules import BrandDiscountRule, CategoryDiscountRule, VoucherDiscountRule, BankOfferRule
+from src.fake_data import get_test_cart_scenario
 
 # --- Fixtures for reusable test setup ---
 
@@ -21,6 +22,11 @@ def category_rule() -> CategoryDiscountRule:
 def voucher_rule() -> VoucherDiscountRule:
     """Fixture for a voucher rule (69% off for SUPER69)."""
     return VoucherDiscountRule({"SUPER69": Decimal("69.0")})
+
+@pytest.fixture
+def bank_rule() -> BankOfferRule:
+    """Fixture for a bank offer rule (10% off ICICI)."""
+    return BankOfferRule({"ICICI": Decimal("10.0")})
 
 @pytest.fixture
 def generic_customer() -> CustomerProfile:
@@ -71,4 +77,27 @@ async def test_no_discounts_applied(brand_rule, category_rule, voucher_rule, gen
     
     assert result.final_price == result.original_price
     assert not result.applied_discounts
+
+@pytest.mark.asyncio
+async def test_full_scenario_with_all_discounts(brand_rule, category_rule, bank_rule):
+    """
+    Test the full scenario from fake_data with brand, category, and bank discounts.
+    """
+    scenario = get_test_cart_scenario()
+    cart = scenario["cart_items"]
+    customer = scenario["customer"]
+    payment = scenario["payment_info"]
+
+    # The order of rules is critical for the final calculation
+    service = DiscountService(rules=[brand_rule, category_rule, bank_rule])
+    result = await service.calculate_cart_discounts(cart, customer, payment)
+
+    # Calculation on a 1000.00 item:
+    # 1. After 40% Brand Discount: 1000 * 0.6 = 600.00
+    # 2. After 10% Category Discount: 600 * 0.9 = 540.00
+    # 3. After 10% Bank Offer: 540 * 0.9 = 486.00
+    assert result.final_price == pytest.approx(Decimal("486.00"))
+    assert "PUMA Brand Discount" in result.applied_discounts
+    assert "T-shirts Category Discount" in result.applied_discounts
+    assert "ICICI Bank Offer" in result.applied_discounts
     
