@@ -173,3 +173,39 @@ class VoucherDiscountRule(IDiscountRule):
                     amount=discount_amount * item.quantity
                 )
             )
+
+
+class BankOfferRule(IDiscountRule):
+    """A discount rule that applies discounts for specific bank offers."""
+
+    def __init__(self, bank_offers: Dict[str, Decimal]):
+        """
+        Initializes the rule with bank-to-discount mappings.
+
+        Args:
+            bank_offers: A dictionary mapping bank names to their discount percentages.
+        """
+        self._bank_offers = bank_offers
+
+    def apply(self, context: DiscountContext) -> None:
+        """Applies bank discount if payment information matches an offer."""
+        if not context.payment_info or not context.payment_info.bank_name:
+            return
+
+        bank_name = context.payment_info.bank_name
+        if bank_name in self._bank_offers:
+            discount_pct = self._bank_offers[bank_name]
+            for item in context.cart_items:
+                product = item.product
+                current_price = context.item_prices[product.id]
+                
+                discount_amount = current_price * (discount_pct / Decimal("100.0"))
+                context.item_prices[product.id] -= discount_amount
+
+                context.applied_discounts.append(
+                    AppliedDiscount(
+                        name=f"{bank_name} Bank Offer",
+                        amount=discount_amount * item.quantity,
+                    )
+                )
+                

@@ -7,6 +7,8 @@ from src.rules import (
     BrandDiscountRule,
     CategoryDiscountRule,
     VoucherDiscountRule,
+    BankOfferRule,
+    PaymentInfo,
 )
 
 # --- Test BrandDiscountRule ---
@@ -69,4 +71,41 @@ def test_voucher_rule_with_tier_requirement_failure():
 
     assert context.item_prices["1"] == Decimal("100.0")
     assert not context.applied_discounts
-    
+
+
+# --- Test BankOfferRule ---
+
+def test_bank_offer_rule_applies_correctly():
+    """Test bank discount is applied for a matching bank."""
+    rule = BankOfferRule({"ICICI": Decimal("10.0")})
+    cart = [CartItem(Product("1", "A", BrandTier.REGULAR, "B", Decimal("1000.0"), Decimal("1000.0")), 1, "S")]
+    payment = PaymentInfo(method="CARD", bank_name="ICICI", card_type="CREDIT")
+    context = DiscountContext(cart, CustomerProfile("1", "gold"), payment=payment)
+
+    rule.apply(context)
+
+    assert context.item_prices["1"] == Decimal("900.0")
+    assert context.applied_discounts[0].name == "ICICI Bank Offer"
+
+def test_bank_offer_rule_does_not_apply_for_wrong_bank():
+    """Test bank discount is not applied for a non-matching bank."""
+    rule = BankOfferRule({"ICICI": Decimal("10.0")})
+    cart = [CartItem(Product("1", "A", BrandTier.REGULAR, "B", Decimal("1000.0"), Decimal("1000.0")), 1, "S")]
+    payment = PaymentInfo(method="CARD", bank_name="HDFC", card_type="CREDIT")
+    context = DiscountContext(cart, CustomerProfile("1", "gold"), payment=payment)
+
+    rule.apply(context)
+
+    assert context.item_prices["1"] == Decimal("1000.0")
+    assert not context.applied_discounts
+
+def test_bank_offer_rule_does_not_apply_without_payment_info():
+    """Test bank discount is not applied when there is no payment info."""
+    rule = BankOfferRule({"ICICI": Decimal("10.0")})
+    cart = [CartItem(Product("1", "A", BrandTier.REGULAR, "B", Decimal("1000.0"), Decimal("1000.0")), 1, "S")]
+    context = DiscountContext(cart, CustomerProfile("1", "gold"), payment=None) # No payment
+
+    rule.apply(context)
+
+    assert context.item_prices["1"] == Decimal("1000.0")
+    assert not context.applied_discounts
