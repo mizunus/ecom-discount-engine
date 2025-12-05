@@ -140,6 +140,12 @@ class VoucherDiscountRule(IDiscountRule):
         if code not in self._voucher_discounts:
             return False
         
+        # Check tier requirements (case-insensitive)
+        if code in self._tier_requirements:
+            required_tier = self._tier_requirements[code]
+            if context.customer.tier.lower() != required_tier.lower():
+                return False
+        
         # Check brand exclusions
         if code in self._brand_exclusions:
             excluded_brands = self._brand_exclusions[code]
