@@ -9,12 +9,15 @@ Module for handling and applying discounts on products based on specific paramet
 - **Bank card offers**: Apply instant discounts based on payment method (e.g., "10% instant discount on ICICI Bank cards")
 - **Vouchers**: Apply voucher codes for additional discounts (e.g., 'SUPER69' for 69% off)
 
-## Discount Application Order
+## Architecture: A Rule-Based Engine
 
-Discounts are applied in the following sequential order:
-1. Brand/Category discounts
-2. Voucher codes
-3. Bank offers
+This project uses a flexible rule-based engine. The order of discount application is not fixed; it is determined by the order in which discount rules are passed to the `DiscountService` during initialization. This allows for dynamic and configurable discount strategies.
+
+For example, to apply brand discounts before voucher discounts:
+service = DiscountService(rules=[
+    BrandDiscountRule(...),
+    VoucherDiscountRule(...)
+])
 
 ## Getting Started
 
@@ -40,23 +43,52 @@ To get started with development, create a virtual environment and install the pr
 
 ## Usage
 
-```python
+The following example demonstrates how to set up and use the `DiscountService`.
+
+python```
+import asyncio
+from decimal import Decimal
+
+# 1. Import necessary classes
+from src.models import CartItem, CustomerProfile, PaymentInfo, Product, BrandTier
 from src.services import DiscountService
-from src.fake_data import get_test_cart_scenario
+from src.rules import BrandDiscountRule, CategoryDiscountRule, BankOfferRule
 
-# Get test data
-test_data = get_test_cart_scenario()
+# 2. Define discount configurations
+# In a real app, this would come from a database or config file
+brand_discounts = {"PUMA": Decimal("40.0")}
+category_discounts = {"T-shirts": Decimal("10.0")}
+bank_offers = {"ICICI": Decimal("10.0")}
 
-# Create service instance
-service = DiscountService()
+# 3. Create rule instances in the desired order of application
+rules = [
+    BrandDiscountRule(brand_discounts),
+    CategoryDiscountRule(category_discounts),
+    BankOfferRule(bank_offers),
+]
 
-# Calculate discounts
-result = await service.calculate_cart_discounts(
-    cart_items=test_data["cart_items"],
-    customer=test_data["customer"],
-    payment_info=test_data["payment_info"],
+# 4. Initialize the DiscountService
+service = DiscountService(rules=rules)
+
+# 5. Set up a scenario to test
+product = Product(
+    id="prod_001", brand="PUMA", brand_tier=BrandTier.PREMIUM,
+    category="T-shirts", base_price=Decimal("1000.00"),
+    current_price=Decimal("1000.00"),
 )
+cart_items = [CartItem(product=product, quantity=1, size="M")]
+customer = CustomerProfile(id="cust_001", tier="regular")
+payment_info = PaymentInfo(method="CARD", bank_name="ICICI", card_type="CREDIT")
 
+# 6. Run the async calculation and get the result
+# This line can be run directly in a Python 3.7+ shell
+result = asyncio.run(service.calculate_cart_discounts(
+    cart_items=cart_items,
+    customer=customer,
+    payment_info=payment_info,
+))
+
+# 7. Print the results
 print(f"Original Price: ₹{result.original_price}")
 print(f"Final Price: ₹{result.final_price}")
 print(result.message)
@@ -74,9 +106,11 @@ pytest
 ecom-discount-engine/
 ├── src/
 │   ├── models.py       # Data models (Product, CartItem, etc.)
-│   ├── services.py     # DiscountService implementation
-│   └── fake_data.py    # Test data
+│   ├── services.py     # The core discount rule engine
+│   ├── rules.py        # Individual discount rule implementations
+│   └── fake_data.py    # Scenarios for testing
 ├── tests/
-│   └── test_services.py  # Unit tests
+│   ├── test_services.py  # Integration tests for the service
+│   └── test_rules.py     # Unit tests for individual rules
 └── pyproject.toml      # Project configuration and dependencies
 ```
