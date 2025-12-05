@@ -27,7 +27,7 @@ To get started with development, create a virtual environment and install the pr
 ### Installation
 
 1.  **Clone the repository:**
-    git clone https://github.com/mizunus/ecom-discount-engine.git # Replace with your repo URL
+    git clone https://github.com/mizunus/ecom-discount-engine.git
     cd ecom-discount-engine
 
 2.  **Create and activate a virtual environment:**

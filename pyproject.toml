@@ -21,8 +21,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/mizunus/ecom-discount-engine" # Replace with your repo URL
-"Bug Tracker" = "https://github.com/mizunus/ecom-discount-engine/issues" # Replace
+"Homepage" = "https://github.com/mizunus/ecom-discount-engine"  # Repo URL
+"Bug Tracker" = "https://github.com/mizunus/ecom-discount-engine/issues"  # URL for bug tracking
 
 [project.optional-dependencies]
 dev = [
